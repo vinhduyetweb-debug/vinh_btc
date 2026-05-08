@@ -1,66 +1,125 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BTC Signal Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bảng tín hiệu Crypto</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🚀 Crypto Signal Dashboard</h1>
+  <main class="container">
+    <header class="header">
+      <div class="badge">Dashboard phân tích chu kỳ</div>
+      <h1>Bảng tín hiệu Crypto</h1>
+      <p>Nhập mã token phổ biến như BTC, ETH, SOL, BNB, XRP, DOGE, ADA, AVAX, LINK, TON...</p>
+    </header>
 
-    <div class="search-box">
-      <input type="text" id="token" value="BTC" placeholder="Nhập token: BTC, ETH, SOL">
-      <button onclick="getSignal()">Xem tín hiệu</button>
-    </div>
+    <section class="search-box">
+      <input type="text" id="token" value="BTC" placeholder="Nhập token: BTC, ETH, SOL...">
+      <button id="btnSignal" type="button">Xem tín hiệu</button>
+    </section>
+
+    <section class="quick-list" id="quickList"></section>
 
     <div id="loading" class="loading hidden">Đang tải dữ liệu...</div>
+    <div id="errorBox" class="error hidden"></div>
 
-    <div id="dashboard" class="dashboard hidden">
-      <div class="card">
+    <section id="dashboard" class="dashboard hidden">
+      <div class="card main-card">
         <h2 id="symbol">BTC</h2>
-        <p>💰 Giá: <span id="price"></span></p>
-        <p>😨 Fear & Greed: <span id="fear"></span></p>
-        <p>💸 Funding Rate: <span id="funding"></span></p>
+        <p class="coin-name" id="coinName">Bitcoin</p>
+        <p>Giá hiện tại <span class="term">(Current Price)</span>: <strong id="price">--</strong></p>
+        <p>Vốn hóa <span class="term">(Market Cap)</span>: <strong id="marketCap">--</strong></p>
+        <p>Xếp hạng vốn hóa <span class="term">(Market Cap Rank)</span>: <strong id="rank">--</strong></p>
       </div>
 
       <div class="card">
-        <h3>🟢 BUY SCORE</h3>
+        <h3>Đỉnh lịch sử <span class="term">(All-Time High - ATH)</span></h3>
+        <div class="metric price-up" id="ath">--</div>
+        <p class="muted" id="athDate">--</p>
+        <p class="muted">Mức giảm từ ATH: <span id="athChange">--</span></p>
+      </div>
+
+      <div class="card">
+        <h3>Đáy lịch sử <span class="term">(All-Time Low - ATL)</span></h3>
+        <div class="metric price-down" id="atl">--</div>
+        <p class="muted" id="atlDate">--</p>
+        <p class="muted">Mức tăng từ ATL: <span id="atlChange">--</span></p>
+      </div>
+
+      <div class="card">
+        <h3>Sợ hãi & Tham lam <span class="term">(Fear & Greed)</span></h3>
+        <div class="metric" id="fear">--</div>
+        <p class="muted">Đo tâm lý chung của thị trường crypto.</p>
+      </div>
+
+      <div class="card">
+        <h3>Tỷ lệ Funding <span class="term">(Funding Rate)</span></h3>
+        <div class="metric" id="funding">--</div>
+        <p class="muted" id="fundingNote">Dữ liệu từ Binance Futures nếu token được hỗ trợ.</p>
+      </div>
+
+      <div class="card">
+        <h3>Điểm Mua <span class="term">(Buy Score)</span></h3>
         <div class="score buy" id="buyScore">0</div>
       </div>
 
       <div class="card">
-        <h3>🔴 SELL SCORE</h3>
+        <h3>Điểm Bán <span class="term">(Sell Score)</span></h3>
         <div class="score sell" id="sellScore">0</div>
       </div>
 
       <div class="card">
-        <h3>📊 MARKET PHASE</h3>
-        <div id="phase"></div>
+        <h3>Trạng thái thị trường <span class="term">(Market Phase)</span></h3>
+        <div class="phase" id="phase">--</div>
       </div>
 
       <div class="card">
-        <h3>⚡ ACTION</h3>
-        <div id="action"></div>
+        <h3>Hành động gợi ý <span class="term">(Action)</span></h3>
+        <div class="action" id="action">--</div>
       </div>
 
       <div class="card">
-        <h3>📌 Last Update</h3>
-        <div id="lastUpdate"></div>
+        <h3>Cập nhật lần cuối <span class="term">(Last Update)</span></h3>
+        <div id="lastUpdate">--</div>
       </div>
 
       <div class="card full">
-        <h3>🧠 Trading Logic</h3>
-        <ul>
-          <li>MUA khi: Fear + Funding thấp + Retail bỏ cuộc</li>
-          <li>BÁN khi: Euphoria + Funding nóng + Retail FOMO</li>
-        </ul>
+        <h3>Lý do tín hiệu <span class="term">(Signal Reasons)</span></h3>
+        <div class="reason-grid">
+          <div>
+            <h4>Tín hiệu mua</h4>
+            <ul id="buyReasons"></ul>
+          </div>
+          <div>
+            <h4>Tín hiệu bán / chốt lời</h4>
+            <ul id="sellReasons"></ul>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-<script src="app.js"></script>
+      <div class="card full">
+        <h3>Giải thích thuật ngữ song ngữ</h3>
+        <div class="glossary">
+          <p><strong>All-Time High (ATH)</strong>: Đỉnh lịch sử, mức giá cao nhất từng ghi nhận.</p>
+          <p><strong>All-Time Low (ATL)</strong>: Đáy lịch sử, mức giá thấp nhất từng ghi nhận.</p>
+          <p><strong>Fear & Greed</strong>: Chỉ số Sợ hãi & Tham lam của thị trường.</p>
+          <p><strong>Funding Rate</strong>: Phí cân bằng vị thế Long/Short trên thị trường phái sinh.</p>
+          <p><strong>Buy Score</strong>: Điểm nghiêng về vùng mua tích lũy.</p>
+          <p><strong>Sell Score</strong>: Điểm nghiêng về vùng chốt lời / giảm rủi ro.</p>
+          <p><strong>Market Phase</strong>: Giai đoạn thị trường.</p>
+          <p><strong>Action</strong>: Hành động gợi ý dựa trên điểm tín hiệu.</p>
+        </div>
+      </div>
+
+      <div class="card full warning">
+        <h3>Lưu ý quan trọng</h3>
+        <p>Dashboard này dùng dữ liệu công khai từ CoinGecko, Alternative.me và Binance Futures. Đây là công cụ tham khảo, không phải lời khuyên đầu tư. Một số token không có dữ liệu Funding Rate vì không được Binance Futures hỗ trợ.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
 </body>
 </html>
