@@ -1,66 +1,89 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BTC Signal Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>ðŸš€ Crypto Signal Dashboard</h1>
+  <main class="container">
+    <header class="header">
+      <h1>Crypto Signal Dashboard</h1>
+      <p>Nhap token de xem tin hieu thi truong: BTC, ETH, SOL...</p>
+    </header>
 
-    <div class="search-box">
-      <input type="text" id="token" value="BTC" placeholder="Nháº­p token: BTC, ETH, SOL">
-      <button onclick="getSignal()">Xem tÃ­n hiá»‡u</button>
-    </div>
+    <section class="search-box">
+      <input type="text" id="token" value="BTC" placeholder="Nhap token: BTC, ETH, SOL">
+      <button id="btnSignal" type="button">Xem tin hieu</button>
+    </section>
 
-    <div id="loading" class="loading hidden">Äang táº£i dá»¯ liá»‡u...</div>
+    <div id="loading" class="loading hidden">Dang tai du lieu...</div>
+    <div id="errorBox" class="error hidden"></div>
 
-    <div id="dashboard" class="dashboard hidden">
+    <section id="dashboard" class="dashboard hidden">
       <div class="card">
         <h2 id="symbol">BTC</h2>
-        <p>ðŸ’° GiÃ¡: <span id="price"></span></p>
-        <p>ðŸ˜¨ Fear & Greed: <span id="fear"></span></p>
-        <p>ðŸ’¸ Funding Rate: <span id="funding"></span></p>
+        <p>Gia: <span id="price">--</span></p>
+        <p>Fear & Greed: <span id="fear">--</span></p>
+        <p>Funding Rate: <span id="funding">--</span></p>
       </div>
 
       <div class="card">
-        <h3>ðŸŸ¢ BUY SCORE</h3>
+        <h3>BUY SCORE</h3>
         <div class="score buy" id="buyScore">0</div>
       </div>
 
       <div class="card">
-        <h3>ðŸ”´ SELL SCORE</h3>
+        <h3>SELL SCORE</h3>
         <div class="score sell" id="sellScore">0</div>
       </div>
 
       <div class="card">
-        <h3>ðŸ“Š MARKET PHASE</h3>
-        <div id="phase"></div>
+        <h3>MARKET PHASE</h3>
+        <div class="phase" id="phase">--</div>
       </div>
 
       <div class="card">
-        <h3>âš¡ ACTION</h3>
-        <div id="action"></div>
+        <h3>ACTION</h3>
+        <div class="action" id="action">--</div>
       </div>
 
       <div class="card">
-        <h3>ðŸ“Œ Last Update</h3>
-        <div id="lastUpdate"></div>
+        <h3>LAST UPDATE</h3>
+        <div id="lastUpdate">--</div>
       </div>
 
       <div class="card full">
-        <h3>ðŸ§  Trading Logic</h3>
-        <ul>
-          <li>MUA khi: Fear + Funding tháº¥p + Retail bá» cuá»™c</li>
-          <li>BÃN khi: Euphoria + Funding nÃ³ng + Retail FOMO</li>
-        </ul>
+        <h3>TRADING LOGIC</h3>
+        <div class="logic-grid">
+          <div>
+            <h4>MUA khi</h4>
+            <ul>
+              <li>Fear cao</li>
+              <li>Funding thap hoac am</li>
+              <li>Retail bo cuoc</li>
+            </ul>
+          </div>
+          <div>
+            <h4>BAN / CHOT LOI khi</h4>
+            <ul>
+              <li>Greed / Euphoria cao</li>
+              <li>Funding nong</li>
+              <li>Retail FOMO</li>
+            </ul>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-<script src="app.js"></script>
+      <div class="card full">
+        <h3>GHI CHU</h3>
+        <p>Ban MVP nay dung Fear & Greed + Funding Rate de tao tin hieu tham khao. MVRV that se can API on-chain nhu Glassnode, Santiment hoac CryptoQuant.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
 </body>
 </html>
