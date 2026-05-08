@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Signal Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">BTC / Crypto Signal</p>
+        <h1>Dashboard tín hiệu Mua / Bán</h1>
+        <p class="sub">Nhập token như BTC, ETH, SOL để xem Fear & Greed, Funding, điểm BUY/SELL và hành động gợi ý.</p>
+      </div>
+    </section>
+
+    <section class="search-card">
+      <input id="tokenInput" placeholder="Nhập token: BTC, ETH, SOL..." value="BTC" />
+      <button id="checkBtn">Xem tín hiệu</button>
+    </section>
+
+    <section id="result" class="grid hidden">
+      <div class="card main-signal">
+        <p class="label">Market Phase</p>
+        <h2 id="phase">--</h2>
+        <div id="action" class="action">--</div>
+      </div>
+
+      <div class="card">
+        <p class="label">Fear & Greed</p>
+        <h3 id="fearValue">--</h3>
+        <p id="fearText" class="muted">--</p>
+      </div>
+
+      <div class="card">
+        <p class="label">Funding Rate</p>
+        <h3 id="fundingValue">--</h3>
+        <p id="fundingText" class="muted">--</p>
+      </div>
+
+      <div class="card">
+        <p class="label">Giá hiện tại</p>
+        <h3 id="priceValue">--</h3>
+        <p id="symbolText" class="muted">--</p>
+      </div>
+
+      <div class="card score-card">
+        <p class="label">BUY SCORE</p>
+        <div class="score-row"><span id="buyScore">0</span><span>/100</span></div>
+        <div class="bar"><div id="buyBar" class="bar-fill buy"></div></div>
+      </div>
+
+      <div class="card score-card">
+        <p class="label">SELL SCORE</p>
+        <div class="score-row"><span id="sellScore">0</span><span>/100</span></div>
+        <div class="bar"><div id="sellBar" class="bar-fill sell"></div></div>
+      </div>
+    </section>
+
+    <section id="reasons" class="card hidden">
+      <h3>Lý do tín hiệu</h3>
+      <div class="reason-grid">
+        <div>
+          <h4>🟢 Mua khi</h4>
+          <ul id="buyReasons"></ul>
+        </div>
+        <div>
+          <h4>🔴 Bán khi</h4>
+          <ul id="sellReasons"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="formula card">
+      <h3>Công thức ngắn gọn nhất</h3>
+      <div class="formula-grid">
+        <div>
+          <h4>Mua khi:</h4>
+          <p>Fear • MVRV thấp • Funding thấp • Retail bỏ cuộc</p>
+        </div>
+        <div>
+          <h4>Bán khi:</h4>
+          <p>Euphoria • MVRV cao • Funding nóng • Retail FOMO cực độ</p>
+        </div>
+      </div>
+      <p class="note">Bản MVP này dùng Fear & Greed, Funding và giá. MVRV thật cần API trả phí như Glassnode/CryptoQuant/Santiment.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
