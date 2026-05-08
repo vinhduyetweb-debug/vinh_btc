@@ -1,26 +1,39 @@
-# Bảng tín hiệu Crypto v4
+# BTC Treasury OS v5
 
-## Nâng cấp trong bản này
+Dashboard cải tiến theo triết lý:
+- BTC là tài sản lõi
+- Không leverage
+- Spot Grid / Volatility Harvesting
+- Mục tiêu tăng số lượng BTC theo thời gian
+- Ưu tiên survival, fee efficiency, cold wallet, BTC accumulation
 
-- Xem được nhiều token phổ biến hơn qua CoinGecko.
-- Hiển thị giá hiện tại.
-- Hiển thị đỉnh lịch sử ATH và thời gian ATH.
-- Hiển thị đáy lịch sử ATL và thời gian ATL.
-- Hiển thị tiếng Việt có dấu, không lỗi font.
-- Thuật ngữ chuyên ngành có song ngữ Anh - Việt.
-- Funding Rate lấy từ Binance Futures nếu token được hỗ trợ.
-- Auto refresh mỗi 30 giây.
+## Tính năng chính
+
+- BTC Treasury Panel
+- Cold Wallet Ratio
+- Sats Generated
+- Market Regime: ACCUMULATION / HARVEST / DEFENSE
+- Fear & Greed
+- BTC Funding Rate
+- Fee Efficiency
+- Volatility Harvest Score
+- Survival Score
+- Bot Architecture: 3 bot đúng triết lý
+- Scarcity Watchlist: BTC, LTC, OKB, BNB, ETH
+- Risk Manager Notes
+- Thuật ngữ song ngữ
+- Lưu thông số bằng localStorage
+- Auto refresh 30 giây
 
 ## Cách deploy lên Vercel
 
 1. Giải nén file zip.
-2. Upload lại toàn bộ 3 file:
+2. Upload toàn bộ file:
    - index.html
    - style.css
    - app.js
-3. Deploy lại trên Vercel.
+3. Deploy lại project Vercel.
 
 ## Lưu ý
 
-Một số token không có Funding Rate vì không có hợp đồng futures trên Binance.
-ATH/ATL lấy từ CoinGecko.
+Đây là dashboard tham khảo, không phải lời khuyên đầu tư.
