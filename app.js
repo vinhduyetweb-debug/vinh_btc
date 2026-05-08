@@ -163,3 +163,11 @@ els.tokenInput.addEventListener('keydown', e => {
 });
 
 checkSignal();
+// AUTO REFRESH mỗi 30 giây
+setInterval(() => {
+    const tokenInput = document.getElementById("token");
+
+    if (tokenInput.value.trim() !== "") {
+        getSignal();
+    }
+}, 30000);
