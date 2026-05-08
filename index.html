@@ -9,42 +9,30 @@
 </head>
 <body>
   <main class="app">
-    <header class="hero">
+    <header class="top">
+      <div class="coin">₿</div>
       <div>
-        <div class="eyebrow">Bitcoin Accumulation Infrastructure</div>
-        <h1>BTC Treasury OS</h1>
-        <p>Dashboard dành cho chiến lược tích lũy BTC dài hạn, spot grid, volatility harvesting và quản trị rủi ro không dùng đòn bẩy.</p>
+        <h1>BTC TREASURY OS</h1>
+        <p>Accumulation • Spot Grid • Volatility Harvesting • Cold Wallet</p>
       </div>
-      <div class="hero-actions">
-        <button id="refreshBtn">Cập nhật dữ liệu</button>
-        <button id="saveBtn" class="ghost">Lưu thông số</button>
+      <div class="framework">
+        <strong>FRAMEWORK</strong>
+        <span>Tăng BTC sở hữu, không dùng leverage</span>
       </div>
     </header>
 
-    <section class="control-panel">
-      <div class="input-group">
-        <label>Tổng BTC nắm giữ <span>(Total BTC Holdings)</span></label>
-        <input id="totalBtc" type="number" step="0.00000001" value="0.25">
+    <section class="panel control">
+      <div class="section-title">THÔNG SỐ TỔNG QUAN</div>
+      <div class="input-grid">
+        <label>Tổng BTC nắm giữ <span>Total BTC Holdings</span><input id="totalBtc" type="number" step="0.00000001" value="0.25"></label>
+        <label>BTC trong ví lạnh <span>Cold Wallet BTC</span><input id="coldBtc" type="number" step="0.00000001" value="0.15"></label>
+        <label>BTC tạo thêm tháng này <span>BTC Generated</span><input id="generatedBtc" type="number" step="0.00000001" value="0.003"></label>
+        <label>Vốn vận hành tổng <span>Total Bot Capital USDT</span><input id="totalBotCapital" type="number" step="1" value="3000"></label>
+        <label>Kế hoạch nạp thêm tháng <span>Monthly Deposit USDT</span><input id="monthlyDeposit" type="number" step="1" value="100"></label>
       </div>
-      <div class="input-group">
-        <label>BTC trong ví lạnh <span>(Cold Wallet BTC)</span></label>
-        <input id="coldBtc" type="number" step="0.00000001" value="0.15">
-      </div>
-      <div class="input-group">
-        <label>BTC tạo thêm tháng này <span>(BTC Generated)</span></label>
-        <input id="generatedBtc" type="number" step="0.00000001" value="0.003">
-      </div>
-      <div class="input-group">
-        <label>Vốn vận hành bot USDT <span>(Bot Capital)</span></label>
-        <input id="botCapital" type="number" step="1" value="3000">
-      </div>
-      <div class="input-group">
-        <label>Lợi nhuận grid tháng này USDT <span>(Grid Profit)</span></label>
-        <input id="gridProfit" type="number" step="0.01" value="45">
-      </div>
-      <div class="input-group">
-        <label>Phí giao dịch tháng này USDT <span>(Trading Fees)</span></label>
-        <input id="feesPaid" type="number" step="0.01" value="6">
+      <div class="buttons">
+        <button id="refreshBtn">Cập nhật</button>
+        <button id="saveBtn" class="secondary">Lưu thông số</button>
       </div>
     </section>
 
@@ -52,119 +40,123 @@
     <div id="errorBox" class="error hidden"></div>
 
     <section class="dashboard">
-      <article class="card main">
-        <div class="card-title">BTC Treasury</div>
-        <div class="big" id="btcHoldings">-- BTC</div>
-        <p class="sub">Giá trị hiện tại: <strong id="btcValue">--</strong></p>
-        <p class="sub">Sats tạo thêm tháng này: <strong id="satsGenerated">--</strong></p>
+      <article class="card green">
+        <h2>BTC TREASURY</h2>
+        <div class="big" id="btcHoldings">--</div>
+        <p>Giá trị hiện tại: <strong id="btcValue">--</strong></p>
+        <p>Sats tạo thêm tháng này: <strong id="satsGenerated">--</strong></p>
       </article>
 
-      <article class="card">
-        <div class="card-title">Cold Wallet Ratio</div>
+      <article class="card blue">
+        <h2>COLD WALLET RATIO</h2>
         <div class="metric" id="coldRatio">--</div>
-        <p class="sub">Tỷ lệ BTC đã rút khỏi rủi ro sàn.</p>
+        <p>Tỷ lệ BTC đã rút khỏi rủi ro sàn.</p>
       </article>
 
-      <article class="card">
-        <div class="card-title">BTC Price</div>
-        <div class="metric" id="btcPrice">--</div>
-        <p class="sub" id="btcAth">ATH: --</p>
+      <article class="card yellow">
+        <h2>MARKET REGIME</h2>
+        <div class="metric" id="marketRegime">--</div>
+        <p id="regimeNote">--</p>
       </article>
 
-      <article class="card">
-        <div class="card-title">Market Regime</div>
-        <div class="metric regime" id="marketRegime">--</div>
-        <p class="sub" id="regimeNote">--</p>
-      </article>
-
-      <article class="card">
-        <div class="card-title">Fear & Greed <span>Chỉ số Sợ hãi & Tham lam</span></div>
-        <div class="metric" id="fearGreed">--</div>
-        <p class="sub">Dùng để điều chỉnh mức độ tích lũy, không dùng để FOMO.</p>
-      </article>
-
-      <article class="card">
-        <div class="card-title">Funding Rate <span>Tỷ lệ Funding</span></div>
-        <div class="metric" id="funding">--</div>
-        <p class="sub">Funding nóng = hạn chế mở rộng grid, ưu tiên phòng thủ.</p>
-      </article>
-
-      <article class="card">
-        <div class="card-title">Fee Efficiency</div>
-        <div class="metric" id="feeEfficiency">--</div>
-        <p class="sub">Net profit sau phí / gross profit.</p>
-      </article>
-
-      <article class="card">
-        <div class="card-title">Volatility Harvest Score</div>
-        <div class="metric" id="harvestScore">--</div>
-        <p class="sub">Đánh giá bot có harvest hiệu quả sau phí không.</p>
-      </article>
-
-      <article class="card">
-        <div class="card-title">Survival Score</div>
-        <div class="metric" id="survivalScore">--</div>
-        <p class="sub">Ưu tiên sống sót qua nhiều chu kỳ hơn tối đa hóa ngắn hạn.</p>
+      <article class="card purple">
+        <h2>MONTHLY DCA PLAN</h2>
+        <div class="metric" id="depositPlan">100 USDT</div>
+        <p id="depositAdvice">--</p>
       </article>
     </section>
 
-    <section class="wide-grid">
-      <article class="card wide">
-        <div class="card-title">Bot Architecture</div>
-        <div class="bot-grid">
-          <div class="bot">
-            <h3>BOT 1 — BTC Core Accumulation</h3>
-            <p><strong>Pair:</strong> BTC/USDT</p>
-            <p><strong>Vai trò:</strong> Tích lũy BTC dài hạn.</p>
-            <p><strong>Mode:</strong> <span id="bot1Mode">--</span></p>
-            <p><strong>Gợi ý:</strong> <span id="bot1Advice">--</span></p>
-          </div>
-          <div class="bot">
-            <h3>BOT 2 — BTC Active Volatility</h3>
-            <p><strong>Pair:</strong> BTC/USDT</p>
-            <p><strong>Vai trò:</strong> Harvest volatility trung hạn.</p>
-            <p><strong>Mode:</strong> <span id="bot2Mode">--</span></p>
-            <p><strong>Gợi ý:</strong> <span id="bot2Advice">--</span></p>
-          </div>
-          <div class="bot">
-            <h3>BOT 3 — Scarcity Micro Grid</h3>
-            <p><strong>Pair:</strong> LTC/USDT hoặc OKB/USDT</p>
-            <p><strong>Vai trò:</strong> Cashflow nhỏ, vẫn theo tư duy khan hiếm.</p>
-            <p><strong>Mode:</strong> <span id="bot3Mode">--</span></p>
-            <p><strong>Gợi ý:</strong> <span id="bot3Advice">--</span></p>
-          </div>
-        </div>
+    <section class="panel">
+      <div class="section-title">BOT ARCHITECTURE & THÔNG SỐ CÀI ĐẶT</div>
+      <div class="bot-table-wrap">
+        <table class="bot-table">
+          <thead>
+            <tr>
+              <th>Bot</th>
+              <th>Pair</th>
+              <th>Phạm vi giá<br><span>Price Range</span></th>
+              <th>Số lưới<br><span>Grid Count</span></th>
+              <th>Lợi nhuận/lưới<br><span>Profit per Grid</span></th>
+              <th>Vốn khởi tạo<br><span>Initial Capital</span></th>
+              <th>Lợi nhuận đã thu<br><span>Realized Profit</span></th>
+              <th>Đánh giá</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>BOT 1</strong><br>BTC Core Accumulation</td>
+              <td><input id="bot1Pair" value="BTC/USDT"></td>
+              <td><input id="bot1Range" value="65000 - 95000"></td>
+              <td><input id="bot1Grids" type="number" value="40"></td>
+              <td><input id="bot1ProfitGrid" type="number" step="0.01" value="0.70"></td>
+              <td><input id="bot1Capital" type="number" value="1500"></td>
+              <td><input id="bot1Profit" type="number" step="0.01" value="18"></td>
+              <td id="bot1Eval">--</td>
+            </tr>
+            <tr>
+              <td><strong>BOT 2</strong><br>BTC Active Volatility</td>
+              <td><input id="bot2Pair" value="BTC/USDT"></td>
+              <td><input id="bot2Range" value="70000 - 90000"></td>
+              <td><input id="bot2Grids" type="number" value="55"></td>
+              <td><input id="bot2ProfitGrid" type="number" step="0.01" value="0.45"></td>
+              <td><input id="bot2Capital" type="number" value="1000"></td>
+              <td><input id="bot2Profit" type="number" step="0.01" value="22"></td>
+              <td id="bot2Eval">--</td>
+            </tr>
+            <tr>
+              <td><strong>BOT 3</strong><br>Scarcity Micro Grid</td>
+              <td><input id="bot3Pair" value="LTC/USDT"></td>
+              <td><input id="bot3Range" value="70 - 110"></td>
+              <td><input id="bot3Grids" type="number" value="65"></td>
+              <td><input id="bot3ProfitGrid" type="number" step="0.01" value="0.35"></td>
+              <td><input id="bot3Capital" type="number" value="500"></td>
+              <td><input id="bot3Profit" type="number" step="0.01" value="12"></td>
+              <td id="bot3Eval">--</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid-two">
+      <article class="panel">
+        <div class="section-title">SO SÁNH HIỆU SUẤT BOT</div>
+        <div id="botCompare" class="compare"></div>
       </article>
 
-      <article class="card wide">
-        <div class="card-title">Scarcity Watchlist <span>Danh sách tài sản khan hiếm ưu tiên</span></div>
-        <div id="scarcityTable" class="table"></div>
-      </article>
-
-      <article class="card wide">
-        <div class="card-title">Risk Manager Notes</div>
-        <ul id="riskNotes" class="notes"></ul>
-      </article>
-
-      <article class="card wide">
-        <div class="card-title">Thuật ngữ song ngữ</div>
-        <div class="glossary">
-          <p><strong>Accumulation</strong>: Tích lũy tài sản theo thời gian.</p>
-          <p><strong>Volatility Harvesting</strong>: Khai thác biến động bằng mua thấp bán cao tự động.</p>
-          <p><strong>Spot Grid Bot</strong>: Bot giao dịch lưới chỉ dùng tài sản thật, không vay nợ.</p>
-          <p><strong>Fee Drag</strong>: Mức lợi nhuận bị phí giao dịch bào mòn.</p>
-          <p><strong>Cold Wallet</strong>: Ví lạnh, nơi lưu trữ BTC giảm rủi ro sàn.</p>
-          <p><strong>Survival Score</strong>: Điểm sống sót dựa trên tỷ lệ ví lạnh, phí và mức nóng thị trường.</p>
-          <p><strong>Market Regime</strong>: Chế độ thị trường, dùng để điều chỉnh chiến lược bot.</p>
-          <p><strong>Sats</strong>: Đơn vị nhỏ nhất của Bitcoin. 1 BTC = 100,000,000 sats.</p>
-        </div>
+      <article class="panel">
+        <div class="section-title">ĐỀ XUẤT TỐI ƯU BOT</div>
+        <ul id="botOptimization" class="notes"></ul>
       </article>
     </section>
 
-    <footer>
+    <section class="grid-two">
+      <article class="panel">
+        <div class="section-title">ĐỀ XUẤT NẠP THÊM 100 USDT/THÁNG</div>
+        <div class="allocation">
+          <div><span>BTC Core</span><strong id="allocCore">--</strong></div>
+          <div><span>BTC Active Volatility</span><strong id="allocActive">--</strong></div>
+          <div><span>Scarcity Micro Grid</span><strong id="allocMicro">--</strong></div>
+          <div><span>Cash Reserve</span><strong id="allocCash">--</strong></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="section-title">ĐỀ XUẤT CẢI THIỆN QUAN TRỌNG</div>
+        <ul id="monthlyImprovements" class="notes"></ul>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="section-title">SCARCITY WATCHLIST</div>
+      <div id="scarcityTable" class="scarcity"></div>
+    </section>
+
+    <section class="panel footer-note">
+      <div class="section-title">NGUYÊN TẮC QUAN TRỌNG</div>
+      <p>Không dùng futures leverage. Không margin. Không liquidation gambling. Mọi bot phục vụ mục tiêu cuối cùng: tăng BTC sở hữu, rút BTC về ví lạnh, sống sót qua nhiều chu kỳ.</p>
       <p>Cập nhật lần cuối: <span id="lastUpdate">--</span></p>
-      <p>Không dùng futures, không margin, không liquidation gambling. Mục tiêu: tăng BTC sở hữu dài hạn.</p>
-    </footer>
+    </section>
   </main>
 
   <script src="./app.js"></script>

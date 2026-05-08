@@ -1,286 +1,187 @@
-const els = {
-  refreshBtn: document.getElementById("refreshBtn"),
-  saveBtn: document.getElementById("saveBtn"),
-  loading: document.getElementById("loading"),
-  errorBox: document.getElementById("errorBox"),
-  totalBtc: document.getElementById("totalBtc"),
-  coldBtc: document.getElementById("coldBtc"),
-  generatedBtc: document.getElementById("generatedBtc"),
-  botCapital: document.getElementById("botCapital"),
-  gridProfit: document.getElementById("gridProfit"),
-  feesPaid: document.getElementById("feesPaid")
-};
-
-const SCARCITY_ASSETS = [
-  { symbol: "BTC", name: "Bitcoin", supply: "21M fixed supply", burn: "Không cần burn", inflation: "Giảm sau mỗi halving", score: 98, role: "Core Reserve Asset" },
-  { symbol: "LTC", name: "Litecoin", supply: "84M capped supply", burn: "Không", inflation: "Giảm theo halving", score: 78, role: "Scarcity Micro Grid" },
-  { symbol: "OKB", name: "OKB", supply: "Có cơ chế burn", burn: "Có", inflation: "Giảm cung theo burn", score: 82, role: "Exchange-backed scarce asset" },
-  { symbol: "BNB", name: "BNB", supply: "Có auto-burn", burn: "Có", inflation: "Thiên về giảm phát", score: 84, role: "Large-cap scarcity yield asset" },
-  { symbol: "ETH", name: "Ethereum", supply: "Không fixed supply", burn: "EIP-1559 burn", inflation: "Có thể thấp/âm tùy mạng", score: 76, role: "Smart contract reserve" }
+const ids = [
+  "totalBtc","coldBtc","generatedBtc","totalBotCapital","monthlyDeposit",
+  "bot1Pair","bot1Range","bot1Grids","bot1ProfitGrid","bot1Capital","bot1Profit",
+  "bot2Pair","bot2Range","bot2Grids","bot2ProfitGrid","bot2Capital","bot2Profit",
+  "bot3Pair","bot3Range","bot3Grids","bot3ProfitGrid","bot3Capital","bot3Profit"
 ];
 
-els.refreshBtn.addEventListener("click", updateDashboard);
-els.saveBtn.addEventListener("click", saveSettings);
+const el = {};
+ids.forEach(id => el[id] = document.getElementById(id));
 
-["totalBtc", "coldBtc", "generatedBtc", "botCapital", "gridProfit", "feesPaid"].forEach(id => {
-  els[id].addEventListener("input", updateLocalOnly);
-});
+document.getElementById("refreshBtn").addEventListener("click", updateDashboard);
+document.getElementById("saveBtn").addEventListener("click", saveSettings);
+ids.forEach(id => el[id].addEventListener("input", updateDashboard));
 
-function num(id) {
-  return Number(els[id].value || 0);
+function n(id){ return Number(el[id].value || 0); }
+function usd(v){ return "$" + Number(v || 0).toLocaleString("vi-VN",{maximumFractionDigits:2}); }
+function btc(v){ return Number(v || 0).toLocaleString("vi-VN",{maximumFractionDigits:8}) + " BTC"; }
+function pct(v){ return Number(v || 0).toLocaleString("vi-VN",{maximumFractionDigits:2}) + "%"; }
+function sats(v){ return Math.round((v || 0) * 100000000).toLocaleString("vi-VN") + " sats"; }
+
+async function getBtcMarket(){
+  const r = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin&sparkline=false");
+  if(!r.ok) throw new Error("Không lấy được dữ liệu BTC từ CoinGecko.");
+  const d = await r.json();
+  return d[0];
+}
+async function getFearGreed(){
+  const r = await fetch("https://api.alternative.me/fng/?limit=1");
+  if(!r.ok) throw new Error("Không lấy được Fear & Greed.");
+  const d = await r.json();
+  return d.data[0];
+}
+async function getFunding(){
+  try{
+    const r = await fetch("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1");
+    if(!r.ok) return null;
+    const d = await r.json();
+    return d[0] ? Number(d[0].fundingRate) : null;
+  }catch{return null;}
 }
 
-function usd(value) {
-  if (!isFinite(value)) return "--";
-  return "$" + Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+function regime(fear, funding){
+  if(fear <= 25) return ["ACCUMULATION", "Sợ hãi: ưu tiên tích lũy BTC và giữ kỷ luật DCA."];
+  if(fear >= 75 || (funding !== null && funding >= 0.0005)) return ["DEFENSE", "Thị trường nóng: giảm rủi ro tồn kho, ưu tiên rút BTC về ví lạnh."];
+  return ["HARVEST", "Trung lập: phù hợp vận hành grid và tối ưu biên lợi nhuận mỗi lưới."];
 }
 
-function btc(value) {
-  if (!isFinite(value)) return "--";
-  return Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 8 }) + " BTC";
-}
-
-function pct(value) {
-  if (!isFinite(value)) return "--";
-  return Number(value).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + "%";
-}
-
-function sats(value) {
-  if (!isFinite(value)) return "--";
-  return Math.round(value * 100000000).toLocaleString("vi-VN") + " sats";
-}
-
-async function getBtcMarket() {
-  const url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin&sparkline=false";
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Không lấy được dữ liệu BTC từ CoinGecko.");
-  const data = await res.json();
-  if (!data[0]) throw new Error("CoinGecko không trả về dữ liệu BTC.");
-  return data[0];
-}
-
-async function getFearGreed() {
-  const res = await fetch("https://api.alternative.me/fng/?limit=1");
-  if (!res.ok) throw new Error("Không lấy được Fear & Greed.");
-  const data = await res.json();
-  return data.data[0];
-}
-
-async function getBtcFunding() {
-  try {
-    const res = await fetch("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1");
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) && data[0] ? Number(data[0].fundingRate) : null;
-  } catch {
-    return null;
-  }
-}
-
-function classifyRegime(fear, funding) {
-  if (fear <= 25) {
-    return {
-      name: "ACCUMULATION",
-      note: "Thị trường sợ hãi. Ưu tiên tích lũy BTC, không cần đoán đáy."
-    };
-  }
-
-  if (fear >= 75 || (funding !== null && funding >= 0.0005)) {
-    return {
-      name: "DEFENSE",
-      note: "Thị trường nóng. Giảm rủi ro tồn kho, ưu tiên chốt lời từng phần sang BTC."
-    };
-  }
-
+function botData(i){
   return {
-    name: "HARVEST",
-    note: "Thị trường trung lập. Phù hợp vận hành grid có kiểm soát phí."
-  };
-}
-
-function calculateScores(fear, funding) {
-  const gross = num("gridProfit");
-  const fees = num("feesPaid");
-  const cold = num("coldBtc");
-  const total = num("totalBtc");
-
-  const feeEfficiency = gross > 0 ? Math.max(0, ((gross - fees) / gross) * 100) : 0;
-  const coldRatio = total > 0 ? (cold / total) * 100 : 0;
-
-  let harvestScore = 50;
-  if (feeEfficiency >= 85) harvestScore += 25;
-  if (feeEfficiency < 70) harvestScore -= 20;
-  if (funding !== null && funding >= 0.0005) harvestScore -= 10;
-  if (fear >= 75) harvestScore -= 10;
-  harvestScore = Math.max(0, Math.min(100, harvestScore));
-
-  let survivalScore = 50;
-  if (coldRatio >= 50) survivalScore += 25;
-  if (coldRatio >= 75) survivalScore += 10;
-  if (fees > gross * 0.25) survivalScore -= 20;
-  if (fear >= 85) survivalScore -= 10;
-  survivalScore = Math.max(0, Math.min(100, survivalScore));
-
-  return { feeEfficiency, coldRatio, harvestScore, survivalScore };
-}
-
-function updateBotAdvice(regime, feeEfficiency) {
-  if (regime.name === "ACCUMULATION") {
-    document.getElementById("bot1Mode").innerText = "Accumulation Mode";
-    document.getElementById("bot1Advice").innerText = "Cho phép bot tích lũy BTC nhiều hơn, không hoảng khi bị kẹt BTC.";
-    document.getElementById("bot2Mode").innerText = "Cautious Harvest";
-    document.getElementById("bot2Advice").innerText = "Giữ grid rộng hơn để tránh overtrading trong biến động mạnh.";
-    document.getElementById("bot3Mode").innerText = "Selective Micro Grid";
-    document.getElementById("bot3Advice").innerText = "Chỉ dùng LTC/OKB/BNB nếu spread đủ bù phí.";
-    return;
+    pair: el[`bot${i}Pair`].value,
+    range: el[`bot${i}Range`].value,
+    grids: n(`bot${i}Grids`),
+    profitGrid: n(`bot${i}ProfitGrid`),
+    capital: n(`bot${i}Capital`),
+    profit: n(`bot${i}Profit`)
   }
-
-  if (regime.name === "DEFENSE") {
-    document.getElementById("bot1Mode").innerText = "Defense Mode";
-    document.getElementById("bot1Advice").innerText = "Không mở rộng vốn quá mạnh. Ưu tiên rút BTC lợi nhuận về ví lạnh.";
-    document.getElementById("bot2Mode").innerText = "Reduce Inventory Risk";
-    document.getElementById("bot2Advice").innerText = "Nới grid, giảm tồn kho, tránh mua đuổi ở vùng hưng phấn.";
-    document.getElementById("bot3Mode").innerText = "Low Exposure";
-    document.getElementById("bot3Advice").innerText = "Giảm vốn micro grid nếu phí cao hoặc thị trường quá FOMO.";
-    return;
-  }
-
-  document.getElementById("bot1Mode").innerText = "Steady Accumulation";
-  document.getElementById("bot1Advice").innerText = "Duy trì bot tích lũy ổn định.";
-  document.getElementById("bot2Mode").innerText = feeEfficiency >= 80 ? "Optimal Harvest" : "Fee Review Needed";
-  document.getElementById("bot2Advice").innerText = feeEfficiency >= 80 ? "Grid đang hiệu quả sau phí." : "Cần nới grid spacing hoặc giảm số lệnh.";
-  document.getElementById("bot3Mode").innerText = "Cashflow Mode";
-  document.getElementById("bot3Advice").innerText = "Tập trung tài sản khan hiếm, tránh meme/low-cap inflationary.";
 }
 
-function renderScarcityTable() {
-  const rows = SCARCITY_ASSETS.map(a => `
-    <tr>
-      <td><strong>${a.symbol}</strong><br><span>${a.name}</span></td>
-      <td>${a.supply}</td>
-      <td>${a.burn}</td>
-      <td>${a.inflation}</td>
-      <td><strong>${a.score}/100</strong></td>
-      <td>${a.role}</td>
-    </tr>
-  `).join("");
-
-  document.getElementById("scarcityTable").innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Tài sản</th>
-          <th>Nguồn cung</th>
-          <th>Burn</th>
-          <th>Lạm phát</th>
-          <th>Scarcity Score</th>
-          <th>Vai trò</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
+function evalBot(b){
+  const roi = b.capital > 0 ? b.profit / b.capital * 100 : 0;
+  let note = "Ổn định";
+  if(b.profitGrid < 0.35) note = "Biên/lưới hơi thấp, dễ bị phí ăn mòn";
+  if(b.grids > 70) note = "Số lưới dày, cần kiểm tra overtrading";
+  if(roi < 0.5) note = "Hiệu suất thấp, cần tối ưu phạm vi hoặc số lưới";
+  if(roi >= 2) note = "Hiệu suất tốt, có thể duy trì";
+  return {roi, note};
 }
 
-function renderRiskNotes(regime, scores, funding) {
+function updateBotAnalysis(){
+  const bots = [botData(1), botData(2), botData(3)];
+  bots.forEach((b, idx)=>{
+    const e = evalBot(b);
+    document.getElementById(`bot${idx+1}Eval`).innerHTML = `<strong>${pct(e.roi)}</strong><br>${e.note}`;
+  });
+
+  const html = bots.map((b, idx)=>{
+    const e = evalBot(b);
+    return `<div class="compare-card">
+      <span>BOT ${idx+1} — ${b.pair}</span>
+      <strong>${pct(e.roi)}</strong>
+      <small>Profit: ${usd(b.profit)} / Capital: ${usd(b.capital)}</small>
+    </div>`
+  }).join("");
+  document.getElementById("botCompare").innerHTML = html;
+
   const notes = [];
-
-  if (scores.coldRatio < 50) notes.push("Tỷ lệ BTC trong ví lạnh dưới 50%. Nên tăng kỷ luật rút BTC khỏi sàn khi có lợi nhuận.");
-  if (scores.feeEfficiency < 75) notes.push("Fee Efficiency thấp. Có dấu hiệu grid quá dày hoặc trade chất lượng chưa đủ cao.");
-  if (funding !== null && funding >= 0.0005) notes.push("Funding Rate nóng. Hạn chế tăng vốn bot, tránh bị cuốn vào FOMO.");
-  if (regime.name === "ACCUMULATION") notes.push("Regime đang nghiêng về tích lũy. Tư duy 'kẹt BTC = DCA' phù hợp, miễn là không dùng leverage.");
-  if (regime.name === "DEFENSE") notes.push("Regime phòng thủ. Ưu tiên bảo toàn BTC, giảm rủi ro tồn kho và chuyển lợi nhuận về BTC.");
-  if (notes.length === 0) notes.push("Hệ thống đang cân bằng. Tiếp tục ưu tiên BTC accumulation, fee efficiency và survival.");
-
-  document.getElementById("riskNotes").innerHTML = notes.map(n => `<li>${n}</li>`).join("");
+  bots.forEach((b, idx)=>{
+    const e = evalBot(b);
+    if(b.profitGrid < 0.35) notes.push(`BOT ${idx+1}: tăng biên lợi nhuận mỗi lưới lên tối thiểu 0,4% - 0,8% để tránh overtrading.`);
+    if(b.grids > 70) notes.push(`BOT ${idx+1}: số lượng lưới đang dày. Nên giảm lưới hoặc mở rộng phạm vi giá.`);
+    if(e.roi < 0.5) notes.push(`BOT ${idx+1}: ROI tháng thấp. Cần kiểm tra lại phạm vi giá có quá xa giá hiện tại không.`);
+    if(e.roi >= 2) notes.push(`BOT ${idx+1}: hiệu suất tốt. Có thể giữ cấu hình, nhưng không tăng vốn quá nhanh.`);
+  });
+  if(notes.length === 0) notes.push("Các bot đang ở trạng thái cân bằng. Tiếp tục theo dõi ROI, biên lợi nhuận/lưới và mức độ khớp lệnh.");
+  document.getElementById("botOptimization").innerHTML = notes.map(x=>`<li>${x}</li>`).join("");
 }
 
-function updateLocalOnly() {
-  const total = num("totalBtc");
-  const cold = num("coldBtc");
-  const generated = num("generatedBtc");
-  const gross = num("gridProfit");
-  const fees = num("feesPaid");
+function updateDepositPlan(regimeName){
+  const amount = n("monthlyDeposit");
+  let core=60, active=20, micro=10, cash=10;
+  if(regimeName === "ACCUMULATION"){ core=70; active=15; micro=10; cash=5; }
+  if(regimeName === "DEFENSE"){ core=50; active=10; micro=5; cash=35; }
 
-  document.getElementById("btcHoldings").innerText = btc(total);
-  document.getElementById("satsGenerated").innerText = sats(generated);
-
-  const coldRatio = total > 0 ? (cold / total) * 100 : 0;
-  document.getElementById("coldRatio").innerText = pct(coldRatio);
-
-  const feeEfficiency = gross > 0 ? Math.max(0, ((gross - fees) / gross) * 100) : 0;
-  document.getElementById("feeEfficiency").innerText = pct(feeEfficiency);
+  document.getElementById("depositPlan").innerText = usd(amount);
+  document.getElementById("allocCore").innerText = usd(amount * core / 100);
+  document.getElementById("allocActive").innerText = usd(amount * active / 100);
+  document.getElementById("allocMicro").innerText = usd(amount * micro / 100);
+  document.getElementById("allocCash").innerText = usd(amount * cash / 100);
+  document.getElementById("depositAdvice").innerText = `Phân bổ theo chế độ ${regimeName}: BTC Core ${core}%, Active ${active}%, Micro ${micro}%, Cash ${cash}%.`;
 }
 
-async function updateDashboard() {
-  els.loading.classList.remove("hidden");
-  els.errorBox.classList.add("hidden");
+function monthlyImprovements(regimeName, coldRatio){
+  const bots = [botData(1), botData(2), botData(3)];
+  const totalProfit = bots.reduce((s,b)=>s+b.profit,0);
+  const notes = [];
+  if(coldRatio < 50) notes.push("Tăng tỷ lệ BTC trong ví lạnh lên tối thiểu 50% tổng BTC nắm giữ.");
+  if(totalProfit > 0) notes.push(`Chuyển một phần lợi nhuận đã thu ${usd(totalProfit)} sang BTC theo lịch cố định, tránh giữ USDT quá lâu.`);
+  if(regimeName === "DEFENSE") notes.push("Thị trường đang nóng: ưu tiên giảm tồn kho bot và không nạp thêm mạnh vào grid rủi ro.");
+  if(regimeName === "ACCUMULATION") notes.push("Thị trường đang sợ hãi: có thể ưu tiên 70% khoản nạp tháng cho BTC Core.");
+  notes.push("Mỗi tháng chỉ thay đổi một biến: phạm vi giá, số lưới hoặc vốn. Không tối ưu quá nhiều thứ cùng lúc.");
+  notes.push("Theo dõi KPI chính: BTC tăng thêm, sats generated, cold wallet ratio, ROI bot theo vốn.");
+  document.getElementById("monthlyImprovements").innerHTML = notes.map(x=>`<li>${x}</li>`).join("");
+}
 
-  try {
-    const [btcMarket, fg, funding] = await Promise.all([
-      getBtcMarket(),
-      getFearGreed(),
-      getBtcFunding()
-    ]);
+function renderScarcity(){
+  const assets = [
+    ["BTC","21M fixed supply","Core Reserve Asset","98/100"],
+    ["LTC","84M capped supply","Scarcity Micro Grid","78/100"],
+    ["OKB","Burn mechanism","Exchange-backed scarcity","82/100"],
+    ["BNB","Auto-burn","Large-cap scarcity asset","84/100"],
+    ["ETH","EIP-1559 burn","Smart contract reserve","76/100"]
+  ];
+  document.getElementById("scarcityTable").innerHTML = `<table>
+    <thead><tr><th>Tài sản</th><th>Nguồn cung</th><th>Vai trò</th><th>Scarcity Score</th></tr></thead>
+    <tbody>${assets.map(a=>`<tr><td><strong>${a[0]}</strong></td><td>${a[1]}</td><td>${a[2]}</td><td>${a[3]}</td></tr>`).join("")}</tbody>
+  </table>`;
+}
 
-    const fear = Number(fg.value);
-    const regime = classifyRegime(fear, funding);
-    const scores = calculateScores(fear, funding);
+async function updateDashboard(){
+  const loading = document.getElementById("loading");
+  const errorBox = document.getElementById("errorBox");
+  loading.classList.remove("hidden");
+  errorBox.classList.add("hidden");
+  try{
+    const [m, fg, fund] = await Promise.all([getBtcMarket(), getFearGreed(), getFunding()]);
+    const [regimeName, note] = regime(Number(fg.value), fund);
+    const total = n("totalBtc");
+    const cold = n("coldBtc");
+    const coldRatio = total > 0 ? cold / total * 100 : 0;
 
-    document.getElementById("btcHoldings").innerText = btc(num("totalBtc"));
-    document.getElementById("btcValue").innerText = usd(num("totalBtc") * btcMarket.current_price);
-    document.getElementById("satsGenerated").innerText = sats(num("generatedBtc"));
-    document.getElementById("coldRatio").innerText = pct(scores.coldRatio);
-    document.getElementById("btcPrice").innerText = usd(btcMarket.current_price);
-    document.getElementById("btcAth").innerText = "ATH: " + usd(btcMarket.ath) + " | Cách ATH: " + pct(btcMarket.ath_change_percentage);
-    document.getElementById("marketRegime").innerText = regime.name;
-    document.getElementById("regimeNote").innerText = regime.note;
-    document.getElementById("fearGreed").innerText = `${fear}/100 (${fg.value_classification})`;
-    document.getElementById("funding").innerText = funding === null ? "Không có dữ liệu" : (funding * 100).toFixed(4) + "%";
-    document.getElementById("feeEfficiency").innerText = pct(scores.feeEfficiency);
-    document.getElementById("harvestScore").innerText = Math.round(scores.harvestScore) + "/100";
-    document.getElementById("survivalScore").innerText = Math.round(scores.survivalScore) + "/100";
+    document.getElementById("btcHoldings").innerText = btc(total);
+    document.getElementById("btcValue").innerText = usd(total * m.current_price);
+    document.getElementById("satsGenerated").innerText = sats(n("generatedBtc"));
+    document.getElementById("coldRatio").innerText = pct(coldRatio);
+    document.getElementById("marketRegime").innerText = regimeName;
+    document.getElementById("regimeNote").innerText = note + ` Fear & Greed: ${fg.value}/100. Funding BTC: ${fund===null?"N/A":(fund*100).toFixed(4)+"%"}.`;
+
+    updateDepositPlan(regimeName);
+    updateBotAnalysis();
+    monthlyImprovements(regimeName, coldRatio);
+    renderScarcity();
     document.getElementById("lastUpdate").innerText = new Date().toLocaleString("vi-VN");
-
-    updateBotAdvice(regime, scores.feeEfficiency);
-    renderScarcityTable();
-    renderRiskNotes(regime, scores, funding);
-  } catch (err) {
-    els.errorBox.innerText = err.message;
-    els.errorBox.classList.remove("hidden");
-  } finally {
-    els.loading.classList.add("hidden");
+  }catch(e){
+    errorBox.innerText = e.message;
+    errorBox.classList.remove("hidden");
+  }finally{
+    loading.classList.add("hidden");
   }
 }
 
-function saveSettings() {
-  const settings = {
-    totalBtc: els.totalBtc.value,
-    coldBtc: els.coldBtc.value,
-    generatedBtc: els.generatedBtc.value,
-    botCapital: els.botCapital.value,
-    gridProfit: els.gridProfit.value,
-    feesPaid: els.feesPaid.value
-  };
-
-  localStorage.setItem("btcTreasurySettings", JSON.stringify(settings));
+function saveSettings(){
+  const data = {};
+  ids.forEach(id=>data[id]=el[id].value);
+  localStorage.setItem("btcTreasuryV6", JSON.stringify(data));
   updateDashboard();
 }
-
-function loadSettings() {
-  const raw = localStorage.getItem("btcTreasurySettings");
-  if (!raw) return;
-
-  try {
-    const settings = JSON.parse(raw);
-    Object.keys(settings).forEach(key => {
-      if (els[key]) els[key].value = settings[key];
-    });
-  } catch {}
+function loadSettings(){
+  try{
+    const data = JSON.parse(localStorage.getItem("btcTreasuryV6") || "{}");
+    ids.forEach(id=>{ if(data[id] !== undefined) el[id].value = data[id]; });
+  }catch{}
 }
 
-setInterval(updateDashboard, 30000);
-
 loadSettings();
-renderScarcityTable();
+renderScarcity();
 updateDashboard();
+setInterval(updateDashboard, 30000);
