@@ -1,173 +1,120 @@
-const els = {
-  tokenInput: document.getElementById('tokenInput'),
-  checkBtn: document.getElementById('checkBtn'),
-  result: document.getElementById('result'),
-  reasons: document.getElementById('reasons'),
-  phase: document.getElementById('phase'),
-  action: document.getElementById('action'),
-  fearValue: document.getElementById('fearValue'),
-  fearText: document.getElementById('fearText'),
-  fundingValue: document.getElementById('fundingValue'),
-  fundingText: document.getElementById('fundingText'),
-  priceValue: document.getElementById('priceValue'),
-  symbolText: document.getElementById('symbolText'),
-  buyScore: document.getElementById('buyScore'),
-  sellScore: document.getElementById('sellScore'),
-  buyBar: document.getElementById('buyBar'),
-  sellBar: document.getElementById('sellBar'),
-  buyReasons: document.getElementById('buyReasons'),
-  sellReasons: document.getElementById('sellReasons'),
-};
 
 async function getFearGreed() {
-  const res = await fetch('https://api.alternative.me/fng/?limit=1');
-  const json = await res.json();
-  const item = json.data[0];
-  return {
-    value: Number(item.value),
-    classification: item.value_classification,
-  };
-}
-
-async function getFunding(symbol) {
-  const pair = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
-  const url = `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${pair}&limit=1`;
-  const res = await fetch(url);
-  const json = await res.json();
-  if (!Array.isArray(json) || json.length === 0) throw new Error(`Không tìm thấy funding cho ${pair}`);
-  const fundingRate = Number(json[0].fundingRate);
-  return { pair, fundingRate, fundingPercent: fundingRate * 100 };
+    const res = await fetch("https://api.alternative.me/fng/?limit=1");
+    const data = await res.json();
+    return data.data[0];
 }
 
 async function getPrice(symbol) {
-  const pair = symbol.endsWith('USDT') ? symbol : `${symbol}USDT`;
-  const url = `https://api.binance.com/api/v3/ticker/price?symbol=${pair}`;
-  const res = await fetch(url);
-  const json = await res.json();
-  if (!json.price) throw new Error(`Không tìm thấy giá cho ${pair}`);
-  return { pair, price: Number(json.price) };
+    const res = await fetch(
+        `https://api.binance.com/api/v3/ticker/price?symbol=${symbol}USDT`
+    );
+    return await res.json();
 }
 
-function scoreSignal(fear, fundingRate) {
-  let buyScore = 0;
-  let sellScore = 0;
-  const buyReasons = [];
-  const sellReasons = [];
+async function getFunding(symbol) {
+    const res = await fetch(
+        `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}USDT&limit=1`
+    );
 
-  if (fear <= 25) {
-    buyScore += 40;
-    buyReasons.push('Fear cao: thị trường đang sợ hãi.');
-  } else if (fear >= 80) {
-    sellScore += 40;
-    sellReasons.push('Greed cao: thị trường quá tham lam.');
-  } else {
-    buyReasons.push('Fear chưa đủ sâu để mua mạnh.');
-    sellReasons.push('Greed chưa đủ nóng để bán mạnh.');
-  }
-
-  if (fundingRate <= 0) {
-    buyScore += 30;
-    buyReasons.push('Funding thấp/âm: ít người dùng đòn bẩy long.');
-  } else if (fundingRate >= 0.0005) {
-    sellScore += 30;
-    sellReasons.push('Funding nóng: nhiều vị thế long, dễ bị quét.');
-  } else {
-    buyReasons.push('Funding trung tính.');
-    sellReasons.push('Funding chưa quá nóng.');
-  }
-
-  if (fear <= 20) {
-    buyScore += 20;
-    buyReasons.push('Retail có dấu hiệu bỏ cuộc.');
-  } else if (fear >= 85) {
-    sellScore += 20;
-    sellReasons.push('Retail có dấu hiệu FOMO cực độ.');
-  }
-
-  let action = 'HOLD';
-  let phase = 'TRUNG LẬP / GIỮ QUAN SÁT';
-  let actionClass = 'hold';
-
-  if (sellScore >= 60) {
-    action = 'TAKE PROFIT / CHỐT DẦN';
-    phase = 'NÓNG / PHÂN PHỐI';
-    actionClass = 'sell';
-  } else if (buyScore >= 60) {
-    action = 'BUY ZONE / CANH MUA';
-    phase = 'SỢ HÃI / TÍCH LŨY';
-    actionClass = 'buy';
-  }
-
-  return { buyScore, sellScore, buyReasons, sellReasons, action, phase, actionClass };
+    return await res.json();
 }
 
-function renderList(el, items) {
-  el.innerHTML = '';
-  items.forEach(text => {
-    const li = document.createElement('li');
-    li.textContent = text;
-    el.appendChild(li);
-  });
+function calculateSignal(fear, fundingRate) {
+    let buyScore = 0;
+    let sellScore = 0;
+
+    if (fear <= 25) buyScore += 40;
+    if (fear >= 75) sellScore += 40;
+
+    if (fundingRate <= 0) buyScore += 30;
+    if (fundingRate >= 0.0005) sellScore += 30;
+
+    if (fear <= 20) buyScore += 20;
+    if (fear >= 85) sellScore += 20;
+
+    let phase = "TRUNG Láº¬P";
+    let action = "HOLD";
+
+    if (buyScore >= 60) {
+        phase = "Sá»¢ HÃƒI / CANH MUA";
+        action = "BUY";
+    }
+
+    if (sellScore >= 60) {
+        phase = "EUPHORIA / QUÃ NÃ“NG";
+        action = "TAKE PROFIT";
+    }
+
+    return { buyScore, sellScore, phase, action };
 }
 
-async function checkSignal() {
-  const token = els.tokenInput.value.trim().toUpperCase();
-  if (!token) return alert('Hãy nhập token, ví dụ BTC');
+async function getSignal() {
+    const loading = document.getElementById("loading");
+    const dashboard = document.getElementById("dashboard");
 
-  els.checkBtn.textContent = 'Đang tải...';
-  els.checkBtn.disabled = true;
+    loading.classList.remove("hidden");
+    dashboard.classList.add("hidden");
 
-  try {
-    const [fg, funding, price] = await Promise.all([
-      getFearGreed(),
-      getFunding(token),
-      getPrice(token),
-    ]);
+    try {
+        const symbol = document.getElementById("token").value.toUpperCase();
 
-    const result = scoreSignal(fg.value, funding.fundingRate);
+        const fearData = await getFearGreed();
+        const priceData = await getPrice(symbol);
+        const fundingData = await getFunding(symbol);
 
-    els.result.classList.remove('hidden');
-    els.reasons.classList.remove('hidden');
+        const fear = parseInt(fearData.value);
+        const fundingRate = parseFloat(fundingData[0].fundingRate);
 
-    els.phase.textContent = result.phase;
-    els.action.textContent = result.action;
-    els.action.className = `action ${result.actionClass}`;
+        const signal = calculateSignal(fear, fundingRate);
 
-    els.fearValue.textContent = `${fg.value}/100`;
-    els.fearText.textContent = fg.classification;
+        document.getElementById("symbol").innerText = symbol;
+        document.getElementById("price").innerText =
+            "$" + parseFloat(priceData.price).toLocaleString();
 
-    els.fundingValue.textContent = `${funding.fundingPercent.toFixed(4)}%`;
-    els.fundingText.textContent = funding.pair;
+        document.getElementById("fear").innerText =
+            `${fear}/100 (${fearData.value_classification})`;
 
-    els.priceValue.textContent = `$${price.price.toLocaleString(undefined, { maximumFractionDigits: 6 })}`;
-    els.symbolText.textContent = price.pair;
+        document.getElementById("funding").innerText =
+            (fundingRate * 100).toFixed(4) + "%";
 
-    els.buyScore.textContent = result.buyScore;
-    els.sellScore.textContent = result.sellScore;
-    els.buyBar.style.width = `${result.buyScore}%`;
-    els.sellBar.style.width = `${result.sellScore}%`;
+        document.getElementById("buyScore").innerText = signal.buyScore;
+        document.getElementById("sellScore").innerText = signal.sellScore;
 
-    renderList(els.buyReasons, result.buyReasons);
-    renderList(els.sellReasons, result.sellReasons);
-  } catch (err) {
-    alert(err.message || 'Có lỗi khi lấy dữ liệu.');
-  } finally {
-    els.checkBtn.textContent = 'Xem tín hiệu';
-    els.checkBtn.disabled = false;
-  }
+        document.getElementById("phase").innerText = signal.phase;
+
+        const actionEl = document.getElementById("action");
+        actionEl.innerText = signal.action;
+
+        if (signal.action === "BUY") {
+            actionEl.style.color = "#22c55e";
+        } else if (signal.action === "TAKE PROFIT") {
+            actionEl.style.color = "#ef4444";
+        } else {
+            actionEl.style.color = "#facc15";
+        }
+
+        document.getElementById("lastUpdate").innerText =
+            new Date().toLocaleTimeString();
+
+        loading.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+
+    } catch (err) {
+        alert("Lá»—i API hoáº·c token khÃ´ng há»£p lá»‡");
+        console.error(err);
+    }
 }
 
-els.checkBtn.addEventListener('click', checkSignal);
-els.tokenInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') checkSignal();
-});
+document.getElementById("token")
+    .addEventListener("change", getSignal);
 
-checkSignal();
-// AUTO REFRESH mỗi 30 giây
 setInterval(() => {
-    const tokenInput = document.getElementById("token");
+    const token = document.getElementById("token").value.trim();
 
-    if (tokenInput.value.trim() !== "") {
+    if (token !== "") {
         getSignal();
     }
 }, 30000);
+
+getSignal();
